@@ -12,9 +12,10 @@ interface AnalysisStatusProps {
   result: ValidationResult | null;
   wasRepaired?: boolean;
   apiError?: string | null;
+  aiSupportPercent?: number | null;
 }
 
-const AnalysisStatus: React.FC<AnalysisStatusProps> = ({ status, result, wasRepaired, apiError }) => {
+const AnalysisStatus: React.FC<AnalysisStatusProps> = ({ status, result, wasRepaired, apiError, aiSupportPercent }) => {
   const { t } = useTranslation();
 
   const renderContent = () => {
@@ -24,6 +25,13 @@ const AnalysisStatus: React.FC<AnalysisStatusProps> = ({ status, result, wasRepa
           <div className="flex items-center text-gray-600 dark:text-gray-300">
             <Loader />
             <span className="mx-3">{t('status_analyzing')}</span>
+          </div>
+        );
+      case AppStatus.ESTIMATING_SUPPORT:
+        return (
+          <div className="flex items-center text-gray-600 dark:text-gray-300">
+            <Loader />
+            <span className="mx-3">{t('status_estimating_support')}</span>
           </div>
         );
       case AppStatus.REPAIRING:
@@ -70,6 +78,12 @@ const AnalysisStatus: React.FC<AnalysisStatusProps> = ({ status, result, wasRepa
                      <div className="flex justify-between items-center">
                       <span className="text-gray-500 dark:text-gray-400">{t('model_specs_volume')}:</span>
                       <span className="text-gray-700 dark:text-gray-200">{result.volume_cm3?.toFixed(2)} cm³</span>
+                     </div>
+                  )}
+                   {aiSupportPercent !== null && (
+                     <div className="flex justify-between items-center pt-1 border-t border-gray-200 dark:border-gray-600 mt-1">
+                      <span className="text-gray-500 dark:text-gray-400">{t('model_specs_support_estimation')}:</span>
+                      <span className="text-gray-700 dark:text-gray-200 font-bold">{aiSupportPercent}%</span>
                      </div>
                   )}
                 </div>

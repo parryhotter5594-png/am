@@ -45,7 +45,6 @@ export const DEFAULT_SETTINGS: Settings = {
   speed_top_bottom_mm_s: 50,
   speed_travel_mm_s: 200,
   support_overhead_percent: 10,
-  top_bottom_thickness_mm: 1.0,
   acceleration_overhead_factor: 1.15, // 15% time overhead for acceleration
 };
 

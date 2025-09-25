@@ -28,6 +28,7 @@ export const en = {
 
     // Analysis Status
     "status_analyzing": "Analyzing model... (this may take a moment)",
+    "status_estimating_support": "Estimating support requirements with AI...",
     "status_repairing": "Attempting to repair model...",
     "status_printable": "Model is suitable for printing.",
     "status_repaired_successfully": "Model successfully repaired and is suitable for printing.",
@@ -36,6 +37,7 @@ export const en = {
     "model_specs_title": "Model Specifications",
     "model_specs_dimensions": "Dimensions (mm)",
     "model_specs_volume": "Volume",
+    "model_specs_support_estimation": "AI Support Estimation",
     "status_repair_prompt": "Model has repairable errors",
     "status_error": "Error processing model",
 
@@ -119,8 +121,10 @@ export const en = {
     "admin_slicer_speed_infill": "Infill Speed (mm/s)",
     "admin_slicer_speed_top_bottom": "Top/Bottom Speed (mm/s)",
     "admin_slicer_speed_travel": "Travel Speed (mm/s)",
-    "admin_slicer_top_bottom_thickness": "Top/Bottom Thickness (mm)",
-    "admin_slicer_support_overhead": "Support Overhead (%)",
+    "admin_slicer_top_bottom_thickness_label": "Top/Bottom Thickness",
+    "admin_slicer_top_bottom_thickness_auto_desc": "Auto-calculated: Nozzle Size × Wall Count.",
+    "admin_slicer_support_overhead_label": "Support Overhead",
+    "admin_slicer_support_overhead_ai_desc": "This is now calculated automatically by AI for each model for better accuracy. The default value is used only if the AI service fails.",
     "admin_slicer_acceleration_overhead": "Acceleration Overhead Factor (e.g. 1.15)",
     "admin_print_options_title": "Print Options",
     "admin_print_options_nozzles": "Nozzle Sizes (mm)",

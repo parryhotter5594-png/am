@@ -1,6 +1,6 @@
-// FIX: The triple-slash directive must be at the top of the file to correctly extend JSX.IntrinsicElements for react-three-fiber components.
 /// <reference types="@react-three/fiber" />
 
+// FIX: The triple-slash directive must be at the top of the file to correctly extend JSX.IntrinsicElements for react-three-fiber components.
 import React, { Suspense, useMemo, useEffect, useRef, useCallback, useState } from 'react';
 import { Canvas, useLoader } from '@react-three/fiber';
 import { OrbitControls, Stage, Center } from '@react-three/drei';

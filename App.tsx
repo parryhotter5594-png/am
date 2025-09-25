@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { ValidationResult, QuoteData, Material, Settings, Color } from './types';
-import { AppStatus, ANALYSIS_RESPONSE_SCHEMA, OPTIMAL_ORIENTATION_RESPONSE_SCHEMA, SUGGESTED_SETTINGS_RESPONSE_SCHEMA } from './types';
+import { AppStatus, ANALYSIS_RESPONSE_SCHEMA, OPTIMAL_ORIENTATION_RESPONSE_SCHEMA, SUGGESTED_SETTINGS_RESPONSE_SCHEMA, SUPPORT_ESTIMATION_RESPONSE_SCHEMA } from './types';
 import { loadSettings, saveSettings } from './settings';
 import FileUploader from './components/FileUploader';
 import AnalysisStatus from './components/AnalysisStatus';
@@ -24,6 +24,38 @@ import { useTranslation } from './i18n';
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // --- AI-Powered Simulation Logic ---
+
+const estimateSupportWithAI = async (fileName: string, dimensions: {x:number, y:number, z:number}): Promise<number> => {
+    const prompt = `You are an expert 3D printing engineer. A model named '${fileName}' with dimensions ${dimensions.x.toFixed(1)}x${dimensions.y.toFixed(1)}x${dimensions.z.toFixed(1)} mm is being analyzed. 
+    Your task is to estimate the support requirement percentage. This percentage represents how much extra material and time will be needed for support structures relative to the model itself.
+    - Analyze the filename for clues about its geometry (e.g., 'figurine', 'sculpture', 'overhang_test' suggest high support needs; 'box', 'plate', 'coaster' suggest low to no support).
+    - Consider the dimensions. Tall, thin, or complex shapes usually need more support.
+    - Based on this, estimate the 'support overhead' as a percentage.
+    - Examples:
+      - A 'detailed human figurine' might need 25%.
+      - A simple 'phone_stand.stl' might need 10%.
+      - A 'flat_calibration_coin.stl' would require 0%.
+    - Return a single number for the percentage. For instance, if you estimate 15%, return 15.
+    - Provide a brief reasoning for your choice.`;
+    
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+        config: {
+            responseMimeType: 'application/json',
+            responseSchema: SUPPORT_ESTIMATION_RESPONSE_SCHEMA,
+        },
+    });
+
+    try {
+        const result = JSON.parse(response.text);
+        return result.support_overhead_percent;
+    } catch (e) {
+        console.error("Error parsing AI support estimation response:", e);
+        // Fallback to a default value if AI fails
+        return 10;
+    }
+};
 
 const findOptimalOrientationWithAI = async (fileName: string): Promise<{x: number, y: number, z: number}> => {
     const prompt = `You are an expert 3D printing slicer engineer. Your task is to determine the optimal print orientation for a model based on its filename: "${fileName}". The goal is to balance minimizing support material, reducing print time (Z-height), and maximizing part strength.
@@ -113,6 +145,7 @@ const calculateQuoteLocally = (
   infillPercent: number,
   wallCount: number,
   settings: Settings,
+  supportPercent: number
 ): {time_hours: number, material_grams: number} => {
     if (!validationResult.volume_cm3 || !validationResult.dimensions_mm) {
         throw new Error("Cannot calculate quote without model geometry.");
@@ -125,6 +158,7 @@ const calculateQuoteLocally = (
     const line_width_mm = nozzleDiameter * 1.2;
     const material_density_g_cm3 = material.density_g_cm3;
     const speed_modifier = 1 - (material.speed_modifier_percent / 100);
+    const top_bottom_thickness_mm = nozzleDiameter * wallCount;
 
     // --- Layer-based estimations ---
     const num_layers = dims_mm.z / layerHeight;
@@ -137,7 +171,7 @@ const calculateQuoteLocally = (
     const wall_area_per_layer_mm2 = wall_path_length_per_layer_mm * line_width_mm;
     const infill_area_per_layer_mm2 = Math.max(0, avg_layer_area_mm2 - wall_area_per_layer_mm2);
     const infill_path_length_per_layer_mm = (infill_area_per_layer_mm2 * (infillPercent / 100)) / line_width_mm;
-    const num_top_bottom_layers = Math.ceil(settings.top_bottom_thickness_mm / layerHeight) * 2; // For both top and bottom
+    const num_top_bottom_layers = Math.ceil(top_bottom_thickness_mm / layerHeight) * 2; // For both top and bottom
     const solid_layer_path_length_mm = avg_layer_area_mm2 / line_width_mm;
 
 
@@ -151,7 +185,7 @@ const calculateQuoteLocally = (
     const total_print_time_s = time_walls_s + time_infill_s + time_top_bottom_s;
     
     // Approximate support time based on print time
-    const time_support_s = total_print_time_s * (settings.support_overhead_percent / 100);
+    const time_support_s = total_print_time_s * (supportPercent / 100);
     
     const base_time_s = total_print_time_s + time_travel_s + time_support_s;
 
@@ -168,7 +202,7 @@ const calculateQuoteLocally = (
     const model_volume_cm3 = (wall_volume_mm3 + infill_volume_mm3 + top_bottom_volume_mm3) / 1000;
     
     // Approximate support material based on model material
-    const support_volume_cm3 = model_volume_cm3 * (settings.support_overhead_percent / 100);
+    const support_volume_cm3 = model_volume_cm3 * (supportPercent / 100);
 
     const final_volume_cm3 = model_volume_cm3 + support_volume_cm3;
     const material_grams = final_volume_cm3 * material_density_g_cm3;
@@ -285,6 +319,7 @@ const App: React.FC = () => {
   
   const [shouldCalculate, setShouldCalculate] = useState(false);
   const [quotedOptions, setQuotedOptions] = useState<QuotedOptions | null>(null);
+  const [aiSupportPercent, setAiSupportPercent] = useState<number | null>(null);
 
   const [theme, setTheme] = useState<'light' | 'dark'>(getInitialTheme());
 
@@ -390,6 +425,7 @@ const App: React.FC = () => {
     analysisStarted.current = false;
     setOptimizationPrompt('');
     setSuggestedSettings(null);
+    setAiSupportPercent(null);
   }, [modelUrl]);
   
   const handleFileSelect = useCallback((selectedFile: File) => {
@@ -428,6 +464,9 @@ const App: React.FC = () => {
         setOriginalValidationResult(finalResult);
     
         if (finalResult.is_printable) {
+          setStatus(AppStatus.ESTIMATING_SUPPORT);
+          const supportPercent = await estimateSupportWithAI(file.name, finalResult.dimensions_mm!);
+          setAiSupportPercent(supportPercent);
           setStatus(AppStatus.SUCCESS);
         } else if (finalResult.is_repairable) {
           setStatus(AppStatus.REPAIR_PROMPT);
@@ -457,6 +496,9 @@ const App: React.FC = () => {
         setValidationResult(repairedResult);
         setOriginalValidationResult(repairedResult); // Update original too
         setWasRepaired(true);
+        setStatus(AppStatus.ESTIMATING_SUPPORT);
+        const supportPercent = await estimateSupportWithAI(file!.name, repairedResult.dimensions_mm!);
+        setAiSupportPercent(supportPercent);
         setStatus(AppStatus.SUCCESS);
     } catch (error) {
         console.error("Error repairing model with AI:", error);
@@ -464,7 +506,7 @@ const App: React.FC = () => {
         setStatus(AppStatus.ERROR);
     }
 
-  }, [validationResult, t]);
+  }, [validationResult, file, t]);
   
   const handleProceedToOptions = useCallback(() => {
     setStep('OPTIONS');
@@ -521,7 +563,8 @@ const App: React.FC = () => {
 
     if (material && nozzle) {
       try {
-        const raw = calculateQuoteLocally(validationResult, material, nozzle.value, selectedLayerHeight, selectedInfill, selectedWallCount, settings);
+        const supportToUse = aiSupportPercent ?? settings.support_overhead_percent;
+        const raw = calculateQuoteLocally(validationResult, material, nozzle.value, selectedLayerHeight, selectedInfill, selectedWallCount, settings, supportToUse);
         setRawQuote(raw);
 
         // Client-side cost calculation based on language
@@ -571,7 +614,7 @@ const App: React.FC = () => {
         setQuotedOptions(null);
       }
     }
-  }, [validationResult, settings, selectedMaterialId, selectedNozzleId, selectedLayerHeight, selectedInfill, selectedWallCount, quantity, t, language]);
+  }, [validationResult, settings, selectedMaterialId, selectedNozzleId, selectedLayerHeight, selectedInfill, selectedWallCount, quantity, t, language, aiSupportPercent]);
 
   useEffect(() => {
     if (shouldCalculate) {
@@ -677,7 +720,7 @@ const handleIgnoreSuggestion = useCallback(() => {
 
 
   const isModelVisible = !!modelUrl;
-  const isAnalysisPending = step === 'ANALYZE' && status === 'ANALYZING';
+  const isAnalysisPending = step === 'ANALYZE' && (status === 'ANALYZING' || status === 'ESTIMATING_SUPPORT');
   const isUnsupportedPreview = useMemo(() => {
     if (!file) return false;
     const lowerName = file.name.toLowerCase();
@@ -819,6 +862,7 @@ const handleIgnoreSuggestion = useCallback(() => {
                     result={validationResult} 
                     wasRepaired={wasRepaired}
                     apiError={apiError}
+                    aiSupportPercent={aiSupportPercent}
                   />
               )}
 

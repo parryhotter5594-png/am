@@ -217,9 +217,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentSettings, onSave, onClos
                     <InputField label={t('admin_slicer_speed_infill')} type="number" value={settings.speed_infill_mm_s} onChange={e => setSettings({...settings, speed_infill_mm_s: parseFloat(e.target.value) || 0})} />
                     <InputField label={t('admin_slicer_speed_top_bottom')} type="number" value={settings.speed_top_bottom_mm_s} onChange={e => setSettings({...settings, speed_top_bottom_mm_s: parseFloat(e.target.value) || 0})} />
                     <InputField label={t('admin_slicer_speed_travel')} type="number" value={settings.speed_travel_mm_s} onChange={e => setSettings({...settings, speed_travel_mm_s: parseFloat(e.target.value) || 0})} />
-                    <InputField label={t('admin_slicer_top_bottom_thickness')} type="number" value={settings.top_bottom_thickness_mm} onChange={e => setSettings({...settings, top_bottom_thickness_mm: parseFloat(e.target.value) || 0})} />
-                    <InputField label={t('admin_slicer_support_overhead')} type="number" value={settings.support_overhead_percent} onChange={e => setSettings({...settings, support_overhead_percent: parseFloat(e.target.value) || 0})} />
+                    <div className="p-3 rounded-md bg-gray-200 dark:bg-gray-800/80 text-sm text-gray-600 dark:text-gray-300 text-center flex flex-col justify-center">
+                        <label className="block text-sm font-bold text-gray-500 dark:text-gray-400 mb-1">{t('admin_slicer_top_bottom_thickness_label')}</label>
+                        <p>{t('admin_slicer_top_bottom_thickness_auto_desc')}</p>
+                    </div>
                     <InputField label={t('admin_slicer_acceleration_overhead')} type="number" step="0.01" value={settings.acceleration_overhead_factor} onChange={e => setSettings({...settings, acceleration_overhead_factor: parseFloat(e.target.value) || 0})} />
+                    <div className="p-3 rounded-md bg-gray-200 dark:bg-gray-800/80 md:col-span-2 lg:col-span-3 text-sm text-gray-600 dark:text-gray-300 text-center">
+                        <p><span className="font-bold">{t('admin_slicer_support_overhead_label')}:</span> {t('admin_slicer_support_overhead_ai_desc')}</p>
+                    </div>
                 </div>
             </section>
 

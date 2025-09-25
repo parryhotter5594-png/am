@@ -57,7 +57,6 @@ export interface Settings {
   speed_top_bottom_mm_s: number;
   speed_travel_mm_s: number;
   support_overhead_percent: number;
-  top_bottom_thickness_mm: number;
   acceleration_overhead_factor: number;
 }
 
@@ -88,9 +87,25 @@ export enum AppStatus {
   QUOTING = 'QUOTING',
   ORIENTING = 'ORIENTING',
   OPTIMIZING_SETTINGS = 'OPTIMIZING_SETTINGS',
+  ESTIMATING_SUPPORT = 'ESTIMATING_SUPPORT',
 }
 
 // --- Gemini API Response Schemas ---
+
+export const SUPPORT_ESTIMATION_RESPONSE_SCHEMA = {
+    type: Type.OBJECT,
+    properties: {
+        support_overhead_percent: { 
+            type: Type.NUMBER, 
+            description: "A single number representing the estimated percentage of the model's volume that will require support structures. E.g., for a complex figurine, return 25. For a simple box, return 0."
+        },
+        reasoning: { 
+            type: Type.STRING, 
+            description: "A brief explanation for why this percentage was chosen." 
+        },
+    },
+    required: ["support_overhead_percent", "reasoning"]
+};
 
 export const SUGGESTED_SETTINGS_RESPONSE_SCHEMA = {
     type: Type.OBJECT,

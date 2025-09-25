@@ -28,6 +28,7 @@ export const fa = {
 
     // Analysis Status
     "status_analyzing": "در حال تحلیل مدل... (این فرآیند ممکن است کمی طول بکشد)",
+    "status_estimating_support": "در حال تخمین نیاز به ساپورت با هوش مصنوعی...",
     "status_repairing": "در حال تلاش برای تعمیر مدل...",
     "status_printable": "مدل برای پرینت مناسب است.",
     "status_repaired_successfully": "مدل با موفقیت تعمیر شد و برای پرینت مناسب است.",
@@ -36,6 +37,7 @@ export const fa = {
     "model_specs_title": "مشخصات مدل",
     "model_specs_dimensions": "ابعاد (mm)",
     "model_specs_volume": "حجم",
+    "model_specs_support_estimation": "تخمین هوشمند ساپورت",
     "status_repair_prompt": "مدل دارای خطاهای قابل تعمیر است",
     "status_error": "خطا در پردازش مدل",
 
@@ -119,8 +121,10 @@ export const fa = {
     "admin_slicer_speed_infill": "سرعت داخلی (mm/s)",
     "admin_slicer_speed_top_bottom": "سرعت لایه‌های بالا/پایین (mm/s)",
     "admin_slicer_speed_travel": "سرعت حرکت آزاد (mm/s)",
-    "admin_slicer_top_bottom_thickness": "ضخامت بالا/پایین (mm)",
-    "admin_slicer_support_overhead": "ضریب سربار ساپورت (%)",
+    "admin_slicer_top_bottom_thickness_label": "ضخامت بالا/پایین",
+    "admin_slicer_top_bottom_thickness_auto_desc": "خودکار: سایز نازل × تعداد دیواره",
+    "admin_slicer_support_overhead_label": "سربار ساپورت",
+    "admin_slicer_support_overhead_ai_desc": "این مورد اکنون به صورت خودکار توسط هوش مصنوعی برای هر مدل جهت دقت بالاتر محاسبه میشود. مقدار پیشفرض تنها در صورت عدم پاسخگویی سرویس هوش مصنوعی استفاده می شود.",
     "admin_slicer_acceleration_overhead": "ضریب سربار شتاب (e.g. 1.15)",
     "admin_print_options_title": "گزینه‌های پرینت",
     "admin_print_options_nozzles": "سایز نازل (mm)",
